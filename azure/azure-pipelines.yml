@@ -5,9 +5,9 @@ resources:
   - repo: self
 
 variables:
-  dockerRegistryServiceConnection: 'cloud-asr-poc'
-  imageRepository: "optimization-api"
-  containerRegistry: "cloudasrpoc.azurecr.io"
+  dockerRegistryServiceConnection: 'service-connection-name'
+  imageRepository: "repo-name"
+  containerRegistry: "container-registry-address"
   dockerfilePath: "**/Dockerfile"
   tag: "$(Build.BuildId)"
 

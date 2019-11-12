@@ -24,8 +24,8 @@ stages:
         steps:
           - task: Gradle@2
             inputs:
-              gradleWrapperFile: 'gradlew'
-              tasks: 'clean build'
+              gradleWrapperFile: "gradlew"
+              tasks: "clean build test"
               jdkVersionOption: 1.11
 
   - stage: Build
@@ -36,8 +36,13 @@ stages:
         pool:
           vmImage: $(vmImageName)
         steps:
+          - task: Gradle@2
+            inputs:
+              gradleWrapperFile: "gradlew"
+              tasks: "build"
+              jdkVersionOption: 1.11
           - task: Docker@2
-            displayName: Build and push an image to container registry
+            displayName: Build and push Docker image to container registry
             inputs:
               command: buildAndPush
               repository: $(imageRepository)
@@ -47,4 +52,26 @@ stages:
                 $(tag)
                 latest
 
-
+  - stage: DeploySandbox
+    displayName: Deploy to Sandbox
+    dependsOn: Build
+    jobs:
+      - deployment: Deploy
+        displayName: Deploy to K8S
+        pool:
+          vmImage: $(vmImageName)
+        environment: "sandbox.default"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: none
+                - checkout: self
+                - task: KubernetesManifest@0
+                  displayName: Deploy to Kubernetes cluster
+                  inputs:
+                    action: deploy
+                    manifests: |
+                      $(System.DefaultWorkingDirectory)/deployment.yml
+                    containers: |
+                      $(containerRegistry)/$(imageRepository):$(tag)
